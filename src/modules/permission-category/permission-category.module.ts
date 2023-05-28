@@ -1,9 +1,12 @@
 import { Module } from '@nestjs/common';
 import { PermissionCategoryService } from './permission-category.service';
 import { PermissionCategoryController } from './permission-category.controller';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { PermissionCategory } from './entities/permission-category.entity';
 
 @Module({
-  controllers: [PermissionCategoryController],
-  providers: [PermissionCategoryService]
+    imports: [TypeOrmModule.forFeature([PermissionCategory])],
+    controllers: [PermissionCategoryController],
+    providers: [PermissionCategoryService],
 })
 export class PermissionCategoryModule {}

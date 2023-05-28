@@ -8,8 +8,6 @@ import { RoleModule } from './modules/role/role.module';
 import { PermissionModule } from './modules/permission/permission.module';
 import { PermissionCategoryModule } from './modules/permission-category/permission-category.module';
 import { AuthModule } from './modules/auth/auth.module';
-import { Slug } from './providers/slug';
-import { Hash } from './providers/hash';
 
 @Module({
     imports: [
@@ -25,6 +23,6 @@ import { Hash } from './providers/hash';
         AuthModule,
     ],
     controllers: [AppController],
-    providers: [AppService, Slug, Hash],
+    providers: [AppService],
 })
 export class AppModule {}
