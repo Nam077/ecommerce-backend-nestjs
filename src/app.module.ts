@@ -5,6 +5,7 @@ import { DatabaseModule } from './modules/database/database.module';
 import { ConfigModule } from '@nestjs/config';
 import { UserModule } from './modules/user/user.module';
 import { RoleModule } from './modules/role/role.module';
+import { PermissionModule } from './modules/permission/permission.module';
 
 @Module({
     imports: [
@@ -15,6 +16,7 @@ import { RoleModule } from './modules/role/role.module';
         DatabaseModule,
         UserModule,
         RoleModule,
+        PermissionModule,
     ],
     controllers: [AppController],
     providers: [AppService],
