@@ -8,6 +8,7 @@ import { RoleModule } from './modules/role/role.module';
 import { PermissionModule } from './modules/permission/permission.module';
 import { PermissionCategoryModule } from './modules/permission-category/permission-category.module';
 import { AuthModule } from './modules/auth/auth.module';
+import { CaslModule } from './modules/casl/casl.module';
 
 @Module({
     imports: [
@@ -21,6 +22,7 @@ import { AuthModule } from './modules/auth/auth.module';
         PermissionModule,
         PermissionCategoryModule,
         AuthModule,
+        CaslModule,
     ],
     controllers: [AppController],
     providers: [AppService],

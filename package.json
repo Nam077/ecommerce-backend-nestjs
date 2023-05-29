@@ -22,6 +22,7 @@
     "start:swc": "nodemon dist/main"
   },
   "dependencies": {
+    "@casl/ability": "^6.5.0",
     "@nestjs/common": "^9.0.0",
     "@nestjs/config": "^2.3.2",
     "@nestjs/core": "^9.0.0",
