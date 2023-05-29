@@ -111,7 +111,7 @@ export class UserService {
     }
 
     async findOne(id: number): Promise<User> {
-        return this.userRepository.findOne({ where: { id }, select: { password: false, roles: true } });
+        return this.userRepository.findOne({ where: { id }, select: { password: false } });
     }
 
     async update(id: number, updateUserDto: UpdateUserDto): Promise<User> {
@@ -151,24 +151,24 @@ export class UserService {
         return await this.userRepository.save({ ...user, refreshToken });
     }
 
-    async validateUser(payload: JwtPayload): Promise<User & { permissions: string[] }> {
-        const user = await this.userRepository
-            .createQueryBuilder('user')
-            .select(['user.id', 'user.name', 'user.email'])
-            .where({ id: +payload.sub })
-            .leftJoinAndSelect('user.roles', 'role')
-            .leftJoinAndSelect('role.permissions', 'permission')
-            .getOne();
+    async validateUser(payload: JwtPayload): Promise<User> {
+        return await this.findOne(+payload.sub);
+    }
+
+    async getPermissions(id: number): Promise<string[]> {
+        const user = await this.userRepository.findOne({
+            where: { id },
+            relations: { roles: { permissions: true } },
+        });
         if (!user) {
-            return null;
+            throw new HttpException('User not found', HttpStatus.NOT_FOUND);
         }
-        const permissions: Set<string> = user.roles.reduce((acc, role) => {
-            return new Set([...acc, ...role.permissions.map((permission) => permission.slug)]);
-        }, new Set<string>());
-        delete user.roles;
-        return {
-            ...user,
-            permissions: [...permissions],
-        };
+        const permissions: Set<string> = new Set();
+        user.roles.forEach((role) => {
+            role.permissions.forEach((permission) => {
+                permissions.add(permission.slug);
+            });
+        });
+        return [...permissions];
     }
 }
