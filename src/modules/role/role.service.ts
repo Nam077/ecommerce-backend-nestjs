@@ -199,7 +199,8 @@ export class RoleService {
         }
         if (action === 'add') {
             return this.addPermission(number, permissionIds);
-        } //
+        }
+
         if (action === 'remove') {
             return this.removePermission(number, permissionIds);
         }
