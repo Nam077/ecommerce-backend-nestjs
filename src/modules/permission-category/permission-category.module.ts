@@ -8,5 +8,6 @@ import { PermissionCategory } from './entities/permission-category.entity';
     imports: [TypeOrmModule.forFeature([PermissionCategory])],
     controllers: [PermissionCategoryController],
     providers: [PermissionCategoryService],
+    exports: [PermissionCategoryService],
 })
 export class PermissionCategoryModule {}

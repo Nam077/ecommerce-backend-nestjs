@@ -64,24 +64,29 @@ export class UserService {
     async getCount(): Promise<number> {
         return this.userRepository.count();
     }
+    getNameTable(): string {
+        return this.userRepository.metadata.tableName;
+    }
 
     async findAll(findAllDto: FindAllDto): Promise<Pagination<User>> {
         const { page = 1, limit = 10, sort, order, search } = findAllDto;
-        const query = this.userRepository.createQueryBuilder('user');
+        const nameTable = this.getNameTable();
+        const query = this.userRepository.createQueryBuilder(nameTable);
 
         // Áp dụng điều kiện tìm kiếm nếu có
         if (search) {
             query.where(
                 new Brackets((qb) => {
-                    qb.where('user.name LIKE :search', { search: `%${search}%` }).orWhere('user.email LIKE :search', {
-                        search: `%${search}%`,
-                    });
+                    qb.where(`${nameTable}.name LIKE :search`, { search: `%${search}%` }).orWhere(
+                        `${nameTable}.email LIKE :search`,
+                        { search: `%${search}%` },
+                    );
                 }),
             );
         }
 
         // Đếm tổng số lượng người dùng
-        const totalCount = await query.getCount();
+        const totalCount = await this.getCount();
 
         // Áp dụng sắp xếp nếu có
         if (sort && order) {
@@ -115,23 +120,27 @@ export class UserService {
     }
 
     async update(id: number, updateUserDto: UpdateUserDto): Promise<User> {
-        const { email, password, name } = updateUserDto;
-        // Kiểm tra xem người dùng có tồn tại hay không
         const user = await this.findOne(id);
+
         if (!user) {
             throw new HttpException('User not found', HttpStatus.NOT_FOUND);
         }
 
-        // Kiểm tra xem email đã tồn tại hay chưa
-        if (email) {
-            const existingUser = await this.findOneByEmail(email);
-            if (existingUser && existingUser.id !== id) {
-                throw new HttpException('Email already exists', HttpStatus.CONFLICT);
+        if (updateUserDto.password) {
+            updateUserDto.password = await Hash.hash(updateUserDto.password);
+        }
+
+        if (updateUserDto.email && updateUserDto.email !== user.email) {
+            const existingUser = await this.findOneByEmail(updateUserDto.email);
+
+            if (existingUser) {
+                throw new ConflictException('Email already exists');
             }
         }
-        await this.userRepository.update(user, updateUserDto);
-        await this.userRepository.save(user);
-        return user;
+
+        await this.userRepository.update(id, updateUserDto);
+
+        return this.findOne(id);
     }
 
     async remove(id: number) {

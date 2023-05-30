@@ -4,21 +4,21 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags, ApiUnauthorizedResponse } from '@nestjs/swagger';
 import { FindAllDto } from '../../common/find-all.dto';
-import { PermissionGuard } from '../auth/guards/permission.guard';
 import { AtGuard } from '../auth/guards/at.guard';
-import { Permissions } from '../../decorators/permissions.decorator';
-import { Subject } from '../../decorators/subject.decorator';
+import { CheckPolicies } from '../../decorators/check-policies.decorator';
+import { Action, AppAbility } from '../casl/factory/casl-ability.factory';
+import { User } from './entities/user.entity';
+import { PoliciesGuard } from '../auth/guards/policies.guard';
 
 @Controller('user')
 @ApiBearerAuth()
 @ApiTags('User')
-@UseGuards(AtGuard)
+// @UseGuards(AtGuard)
 export class UserController {
     constructor(private readonly userService: UserService) {}
 
-    @UseGuards(PermissionGuard)
-    @Permissions('user:create')
-    @Subject('user')
+    @UseGuards(PoliciesGuard)
+    @CheckPolicies((ability: AppAbility) => ability.can(Action.Create, User))
     @Post()
     @ApiOperation({ summary: 'Create user' })
     @ApiUnauthorizedResponse({ description: 'Unauthorized' })
@@ -30,6 +30,8 @@ export class UserController {
     }
 
     @Get()
+    @UseGuards(PoliciesGuard)
+    @CheckPolicies((ability: AppAbility) => ability.can(Action.Read, User))
     findAll(@Query() findAllDto: FindAllDto) {
         return this.userService.findAll(findAllDto);
     }

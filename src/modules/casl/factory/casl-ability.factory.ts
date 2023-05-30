@@ -32,9 +32,8 @@ type Subjects = InferSubjects<typeof User | 'all'>;
 export type AppAbility = MongoAbility<[Action, Subjects]>;
 
 export class CaslAbilityFactory {
-    createForUser(user: User & { permissions: string[] }) {
+    createForUser(user: User, userPermissions: string[]) {
         const { can: allow, cannot: deny, build } = new AbilityBuilder<AppAbility>(createMongoAbility);
-        const userPermissions = user.permissions;
 
         allow(Action.Read, 'all');
 

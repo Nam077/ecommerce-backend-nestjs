@@ -12,6 +12,7 @@ import { CaslModule } from './modules/casl/casl.module';
 
 @Module({
     imports: [
+        CaslModule.forRoot(),
         ConfigModule.forRoot({
             isGlobal: true,
             envFilePath: `.env.${process.env.NODE_ENV || 'development'}`,
@@ -22,7 +23,6 @@ import { CaslModule } from './modules/casl/casl.module';
         PermissionModule,
         PermissionCategoryModule,
         AuthModule,
-        CaslModule,
     ],
     controllers: [AppController],
     providers: [AppService],
