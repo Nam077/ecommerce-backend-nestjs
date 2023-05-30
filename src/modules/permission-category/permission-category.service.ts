@@ -65,7 +65,7 @@ export class PermissionCategoryService {
         const totalCount = await this.getCount();
 
         if (sort && order) {
-            query.orderBy(`user.${sort}`, order);
+            query.orderBy(`${nameTable}.${sort}`, order.toUpperCase() as 'ASC' | 'DESC');
         }
 
         if (page) {

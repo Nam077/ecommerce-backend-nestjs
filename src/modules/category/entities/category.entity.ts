@@ -3,21 +3,22 @@ import {
     CreateDateColumn,
     DeleteDateColumn,
     Entity,
+    JoinColumn,
+    ManyToOne,
     OneToMany,
     PrimaryGeneratedColumn,
     UpdateDateColumn,
 } from 'typeorm';
-import { Permission } from '../../permission/entities/permission.entity';
 
 @Entity({
-    name: 'permission_categories',
+    name: 'categories',
 })
-export class PermissionCategory {
+export class Category {
     @PrimaryGeneratedColumn({
         type: 'int',
         name: 'id',
         unsigned: true,
-        comment: 'Id of permission category',
+        comment: 'Id of category',
     })
     id: number;
 
@@ -26,7 +27,7 @@ export class PermissionCategory {
         name: 'name',
         length: 255,
         nullable: false,
-        comment: 'Name of permission category',
+        comment: 'Name of category',
     })
     name: string;
 
@@ -36,7 +37,7 @@ export class PermissionCategory {
         length: 255,
         nullable: false,
         unique: true,
-        comment: 'Slug of permission category',
+        comment: 'Slug of category',
     })
     slug: string;
 
@@ -45,7 +46,7 @@ export class PermissionCategory {
         name: 'description',
         default: null,
         nullable: true,
-        comment: 'Description of permission category',
+        comment: 'Description of category',
     })
     description: string;
 
@@ -53,7 +54,7 @@ export class PermissionCategory {
         type: 'timestamp',
         name: 'created_at',
         nullable: false,
-        comment: 'Created date of permission category',
+        comment: 'Created date of category',
     })
     createdAt: Date;
 
@@ -61,7 +62,7 @@ export class PermissionCategory {
         type: 'timestamp',
         name: 'updated_at',
         nullable: false,
-        comment: 'Updated date of permission category',
+        comment: 'Updated date of category',
     })
     updatedAt: Date;
 
@@ -69,10 +70,13 @@ export class PermissionCategory {
         type: 'timestamp',
         name: 'deleted_at',
         nullable: true,
-        comment: 'Deleted date of permission category',
+        comment: 'Deleted date of category',
     })
     deletedAt: Date;
 
-    @OneToMany(() => Permission, (permission) => permission.permissionCategory)
-    permissions: Permission[];
+    @OneToMany(() => Category, (category) => category.parent)
+    children: Category[];
+
+    @ManyToOne(() => Category, (category) => category.children)
+    parent: Category;
 }

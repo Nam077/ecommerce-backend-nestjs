@@ -53,7 +53,6 @@ export class RoleService {
         const nameTable = this.getNameTable();
         const query = this.roleRepository.createQueryBuilder(nameTable);
 
-        // Áp dụng điều kiện tìm kiếm nếu có
         if (search) {
             query.where(
                 new Brackets((qb) => {
@@ -65,23 +64,18 @@ export class RoleService {
             );
         }
 
-        // Đếm tổng số lượng người dùng
         const totalCount = await this.getCount();
 
-        // Áp dụng sắp xếp nếu có
         if (sort && order) {
             query.orderBy(`${nameTable}.${sort}`, order);
         }
 
-        // Áp dụng phân trang
         if (page) {
             query.skip((page - 1) * limit);
             query.take(limit);
         }
-        // không lấy password
         query.select([`${nameTable}.id`, `${nameTable}.name`, `${nameTable}.slug`, `${nameTable}.description`]);
-        // relation với role
-        // Lấy danh sách người dùng
+
         const roles = await query.getMany();
 
         return {

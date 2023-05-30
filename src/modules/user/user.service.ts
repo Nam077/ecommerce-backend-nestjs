@@ -73,7 +73,6 @@ export class UserService {
         const nameTable = this.getNameTable();
         const query = this.userRepository.createQueryBuilder(nameTable);
 
-        // Áp dụng điều kiện tìm kiếm nếu có
         if (search) {
             query.where(
                 new Brackets((qb) => {
@@ -85,24 +84,18 @@ export class UserService {
             );
         }
 
-        // Đếm tổng số lượng người dùng
         const totalCount = await this.getCount();
 
-        // Áp dụng sắp xếp nếu có
         if (sort && order) {
             query.orderBy(`user.${sort}`, order);
         }
 
-        // Áp dụng phân trang
         if (page) {
             query.skip((page - 1) * limit);
             query.take(limit);
         }
-        // không lấy password
         query.select(['user.id', 'user.name', 'user.email', 'user.createdAt', 'user.updatedAt']);
-        // relation với role
         query.leftJoinAndSelect('user.roles', 'roles');
-        // Lấy danh sách người dùng
         const users = await query.getMany();
 
         return {
