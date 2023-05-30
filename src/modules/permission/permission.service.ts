@@ -3,7 +3,7 @@ import { CreatePermissionDto } from './dto/create-permission.dto';
 import { UpdatePermissionDto } from './dto/update-permission.dto';
 import { Permission } from './entities/permission.entity';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import { ResponseData } from 'src/interfaces/response.interface';
 import { PermissionCategoryService } from '../permission-category/permission-category.service';
 import { Slug } from '../../common/slug';
@@ -54,8 +54,8 @@ export class PermissionService {
         const savedPermissions = await this.permissionRepository.save(createdPermission);
 
         return {
-            statusCode: HttpStatus.CREATED,
-            message: 'Permission created successfully',
+            statusCode: savedPermissions.length > 0 ? HttpStatus.CREATED : HttpStatus.CONFLICT,
+            message: savedPermissions.length > 0 ? 'Permission created successfully' : 'Permission already exists',
             data: savedPermissions,
         };
     }
@@ -64,8 +64,8 @@ export class PermissionService {
         return `This action returns all permission`;
     }
 
-    async findOne(id: number) {
-        return `This action returns a #${id} permission`;
+    async findOne(id: number): Promise<Permission> {
+        return this.permissionRepository.findOneBy({ id });
     }
 
     async update(id: number, updatePermissionDto: UpdatePermissionDto) {
@@ -74,5 +74,9 @@ export class PermissionService {
 
     async remove(id: number) {
         return `This action removes a #${id} permission`;
+    }
+
+    async findByIds(ids: number[]): Promise<Permission[]> {
+        return this.permissionRepository.find({ where: { id: In(ids) } });
     }
 }

@@ -9,5 +9,6 @@ import { PermissionCategoryModule } from '../permission-category/permission-cate
     imports: [TypeOrmModule.forFeature([Permission]), PermissionCategoryModule],
     controllers: [PermissionController],
     providers: [PermissionService],
+    exports: [PermissionService],
 })
 export class PermissionModule {}
