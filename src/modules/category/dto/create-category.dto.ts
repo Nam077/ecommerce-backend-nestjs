@@ -20,10 +20,10 @@ export class CreateCategoryDto {
     description: string;
 
     @ApiProperty({
-        example: 0,
+        example: null,
         description: 'Parent ID of the category',
         required: false,
-        default: 0,
+        default: null,
         type: Number,
     })
     @IsOptional()

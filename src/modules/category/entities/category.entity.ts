@@ -75,8 +75,16 @@ export class Category {
     deletedAt: Date;
 
     @OneToMany(() => Category, (category) => category.parent)
+    @JoinColumn({
+        name: 'parent_id',
+        referencedColumnName: 'id',
+    })
     children: Category[];
 
     @ManyToOne(() => Category, (category) => category.children)
+    @JoinColumn({
+        name: 'parent_id',
+        referencedColumnName: 'id',
+    })
     parent: Category;
 }
