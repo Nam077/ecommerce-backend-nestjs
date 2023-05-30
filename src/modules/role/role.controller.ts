@@ -4,6 +4,7 @@ import { CreateRoleDto } from './dto/create-role.dto';
 import { UpdateRoleDto } from './dto/update-role.dto';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { FindAllDto } from '../../common/find-all.dto';
+import { RoleHandlePermissionDto } from './dto/role-handle-permission.dto';
 
 @Controller('role')
 @ApiTags('Role')
@@ -24,6 +25,11 @@ export class RoleController {
     @Get(':id')
     findOne(@Param('id') id: string) {
         return this.roleService.findOne(+id);
+    }
+
+    @Patch('handle-permission/:id')
+    handlePermission(@Param('id') id: string, @Body() handlePermissionDto: RoleHandlePermissionDto) {
+        return this.roleService.handlePermission(+id, handlePermissionDto);
     }
 
     @Patch(':id')

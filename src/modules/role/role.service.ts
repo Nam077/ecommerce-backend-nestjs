@@ -8,6 +8,7 @@ import { PermissionService } from '../permission/permission.service';
 import { Slug } from '../../common/slug';
 import { ResponseData } from '../../interfaces/response.interface';
 import { FindAllDto } from '../../common/find-all.dto';
+import { RoleHandlePermissionDto } from './dto/role-handle-permission.dto';
 
 @Injectable()
 export class RoleService {
@@ -94,7 +95,52 @@ export class RoleService {
     }
 
     async findOne(id: number) {
-        return this.roleRepository.findOneBy({ id });
+        return this.roleRepository.findOne({
+            where: { id },
+            relations: { permissions: true },
+        });
+    }
+
+    async addPermission(id: number, permissions: number[]): Promise<ResponseData<Role>> {
+        const role: Role = await this.findOne(id);
+
+        if (!role) {
+            throw new HttpException(`Role ${id} not found`, HttpStatus.NOT_FOUND);
+        }
+
+        let idExistsPermissions: Set<number> = new Set(role.permissions.map((p) => p.id));
+        idExistsPermissions = new Set([...idExistsPermissions, ...permissions]);
+
+        role.permissions = await this.permissionService.findByIds([...idExistsPermissions]);
+
+        await this.roleRepository.save(role);
+
+        return {
+            data: await this.findOne(id),
+            statusCode: HttpStatus.OK,
+            message: 'Permission added successfully',
+        };
+    }
+
+    async removePermission(id: number, permissions: number[]): Promise<ResponseData<Role>> {
+        const role = await this.findOne(id);
+
+        if (!role) {
+            throw new HttpException(`Role ${id} not found`, HttpStatus.NOT_FOUND);
+        }
+
+        const idExistsPermissions: Set<number> = new Set(role.permissions.map((p) => p.id));
+        permissions.forEach((p) => idExistsPermissions.delete(p));
+
+        role.permissions = await this.permissionService.findByIds([...idExistsPermissions]);
+
+        await this.roleRepository.save(role);
+
+        return {
+            data: await this.findOne(id),
+            statusCode: HttpStatus.OK,
+            message: 'Permission removed successfully',
+        };
     }
 
     async update(id: number, updateRoleDto: UpdateRoleDto) {
@@ -113,7 +159,9 @@ export class RoleService {
                 throw new HttpException(`Role${updateRoleDto.name} already exists`, HttpStatus.CONFLICT);
             }
         }
-
+        if (updateRoleDto.permissions) {
+            role.permissions = await this.permissionService.findByIds(updateRoleDto.permissions);
+        }
         const updatedRole: Role = {
             ...role,
             slug: newSlug,
@@ -141,5 +189,19 @@ export class RoleService {
             statusCode: HttpStatus.OK,
             message: 'Permission category deleted successfully',
         };
+    }
+
+    async handlePermission(number: number, handlePermissionDto: RoleHandlePermissionDto): Promise<ResponseData<Role>> {
+        const { permissionIds, action } = handlePermissionDto;
+        const role = await this.findOne(number);
+        if (!role) {
+            throw new HttpException(`Role ${number} not found`, HttpStatus.NOT_FOUND);
+        }
+        if (action === 'add') {
+            return this.addPermission(number, permissionIds);
+        }
+        if (action === 'remove') {
+            return this.removePermission(number, permissionIds);
+        }
     }
 }
