@@ -59,30 +59,65 @@ export class CategoryService {
     }
 
     async findAll(): Promise<Category[]> {
-        const tableName = this.getNameTable(); // Lấy tên bảng từ hàm getNameTable()
-
-        // Tạo truy vấn sử dụng createQueryBuilder()
-        return this.categoryRepository
-            .createQueryBuilder(tableName)
-            .leftJoinAndSelect(`${tableName}.children`, 'children') // Kết hợp bảng "children"
-            .leftJoinAndSelect(`children.children`, 'subChildren') // Kết hợp bảng "subChildren" (danh mục con của danh mục con)
-            .where(`${tableName}.parent IS NULL`) // Lọc danh mục gốc (có parent là NULL)
-            .orderBy(`${tableName}.id, children.id, subChildren.id`) // Sắp xếp kết quả theo thứ tự id của danh mục và danh mục con
-            .getMany();
+        const categories = await this.categoryRepository.find({
+            relations: {
+                children: true,
+                parent: true,
+            },
+        });
+        return this.buildCategoryTree(categories);
     }
 
-    async findOne(id: number): Promise<Category> {
-        const tableName = this.getNameTable();
+    buildCategoryTree(categories: Category[]): Category[] {
+        const categoryMap = new Map<number, Category>();
+        const rootCategories: Category[] = [];
 
-        return this.categoryRepository
-            .createQueryBuilder(tableName)
-            .leftJoinAndSelect(`${tableName}.children`, 'children')
-            .leftJoinAndSelect(`children.children`, 'subChildren')
-            .where(`${tableName}.id = :id`, { id }) // Lọc danh mục theo ID
-            .getOne();
+        // Tạo một bản đồ danh mục để truy cập nhanh
+        categories.forEach((category) => {
+            category.children = [];
+            categoryMap.set(category.id, category);
+        });
+
+        // Xây dựng cây danh mục
+        categories.forEach((category) => {
+            if (category.parent) {
+                const parentCategory = categoryMap.get(category.parent.id);
+                if (parentCategory) {
+                    parentCategory.children.push(category);
+                }
+            } else {
+                rootCategories.push(category);
+            }
+        });
+
+        return rootCategories;
     }
 
-    async update(id: number, updateCategoryDto: UpdateCategoryDto) {
+    async findOne(id: number): Promise<Category & { idsChild: number[] }> {
+        const category = await this.categoryRepository.findOne({
+            where: {
+                id,
+            },
+            relations: {
+                children: true,
+                parent: true,
+            },
+        });
+        const idsChild = category.children.map((child) => child.id);
+        if (category.children) {
+            for (const child of category.children) {
+                const childCategory = await this.findOne(child.id);
+                child.children = childCategory.children;
+                idsChild.push(...childCategory.idsChild);
+            }
+        }
+        return {
+            ...category,
+            idsChild,
+        };
+    }
+
+    async update(id: number, updateCategoryDto: UpdateCategoryDto): Promise<ResponseData<Category>> {
         const existingCategory = await this.findOne(id);
         if (!existingCategory) {
             throw new HttpException('Category not found', HttpStatus.NOT_FOUND);
@@ -105,24 +140,22 @@ export class CategoryService {
             if (parentId === existingCategory.id) {
                 throw new HttpException('Parent category cannot be itself', HttpStatus.BAD_REQUEST);
             }
-
-            const parentCategory = await this.findOne(parentId);
-            // Kiểm tra xem danh mục cha có là danh mục con của danh mục hiện tại hay không
-
-            if (!parentCategory) {
-                throw new HttpException('Parent category not found', HttpStatus.NOT_FOUND);
-            }
-            const isChildren = this.checkIsChildren(parentCategory, existingCategory);
+            const isChildren = this.checkIsChildren(parentId, existingCategory.idsChild);
             if (isChildren) {
                 throw new HttpException('Parent category cannot be its child', HttpStatus.BAD_REQUEST);
+            }
+
+            const parentCategory = await this.findOne(parentId);
+            if (!parentCategory) {
+                throw new HttpException('Parent category not found', HttpStatus.NOT_FOUND);
             }
 
             existingCategory.parent = parentCategory;
         }
 
-        // const savedCategory = await this.categoryRepository.save(existingCategory);
+        const savedCategory = await this.categoryRepository.save(existingCategory);
         return {
-            data: null,
+            data: savedCategory,
             message: 'Category updated successfully',
             statusCode: HttpStatus.OK,
         };
@@ -140,23 +173,7 @@ export class CategoryService {
         };
     }
 
-    private checkIsChildren(parentCategory: Category, existingCategory: Category): boolean {
-        if (existingCategory.id === parentCategory.id) {
-            // Nếu ID của parentCategory trùng khớp với ID của existingCategory
-            // tức là parentCategory là con của existingCategory
-            return true;
-        }
-        if (!existingCategory.children) {
-            return false;
-        }
-        if (existingCategory.children) {
-            for (const childCategory of existingCategory.children) {
-                if (this.checkIsChildren(parentCategory, childCategory)) {
-                    // Nếu tìm thấy parentCategory là con của một danh mục con của existingCategory
-                    return true;
-                }
-            }
-        }
-        return false;
+    private checkIsChildren(parentId: number, idsChild: number[]): boolean {
+        return idsChild.includes(parentId);
     }
 }
