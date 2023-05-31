@@ -1,6 +1,5 @@
-import { createParamDecorator, ExecutionContext, SetMetadata } from '@nestjs/common';
+import { createParamDecorator, ExecutionContext } from '@nestjs/common';
 import { User } from '../modules/user/entities/user.entity';
-import { JwtPayload } from '../interfaces/jwt-payload.interface';
 
 export const GetCurrentUser = createParamDecorator((data: string | undefined, context: ExecutionContext): User => {
     const request = context.switchToHttp().getRequest();
@@ -11,6 +10,5 @@ export const GetCurrentUser = createParamDecorator((data: string | undefined, co
 });
 export const GetCurrentUserId = createParamDecorator((_: undefined, context: ExecutionContext): number => {
     const { user } = context.switchToHttp().getRequest();
-    console.log(user);
     return +user.id;
 });

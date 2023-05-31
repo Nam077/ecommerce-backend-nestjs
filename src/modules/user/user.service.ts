@@ -157,7 +157,10 @@ export class UserService {
         return await this.findOne(+payload.sub);
     }
 
-    async getPermissions(id: number): Promise<string[]> {
+    async getRolesPermissions(id: number): Promise<{
+        allRoles: string[];
+        allPermissions: string[];
+    }> {
         const user = await this.userRepository.findOne({
             where: { id },
             relations: { roles: { permissions: true } },
@@ -166,11 +169,16 @@ export class UserService {
             throw new HttpException('User not found', HttpStatus.NOT_FOUND);
         }
         const permissions: Set<string> = new Set();
+        const roles: Set<string> = new Set();
         user.roles.forEach((role) => {
             role.permissions.forEach((permission) => {
                 permissions.add(permission.slug);
             });
+            roles.add(role.slug);
         });
-        return [...permissions];
+        return {
+            allRoles: [...roles],
+            allPermissions: [...permissions],
+        };
     }
 }

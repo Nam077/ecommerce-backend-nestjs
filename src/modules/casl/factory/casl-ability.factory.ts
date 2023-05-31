@@ -1,11 +1,4 @@
-import {
-    Ability,
-    AbilityBuilder,
-    createMongoAbility,
-    ExtractSubjectType,
-    InferSubjects,
-    MongoAbility,
-} from '@casl/ability';
+import { AbilityBuilder, createMongoAbility, ExtractSubjectType, InferSubjects, MongoAbility } from '@casl/ability';
 import { User } from '../../user/entities/user.entity';
 
 /**
@@ -28,33 +21,42 @@ export enum Action {
     Update = 'update',
     Delete = 'delete',
 }
+export interface UserWithPermissionsAndRoles extends User {
+    allPermissions: string[];
+    allRoles: string[];
+}
+
 type Subjects = InferSubjects<typeof User | 'all'>;
 export type AppAbility = MongoAbility<[Action, Subjects]>;
 
 export class CaslAbilityFactory {
-    createForUser(user: User, userPermissions: string[]) {
+    createForUser(user: UserWithPermissionsAndRoles): AppAbility {
         const { can: allow, cannot: deny, build } = new AbilityBuilder<AppAbility>(createMongoAbility);
+        const { allRoles, allPermissions } = user;
 
+        if (user.name === 'admin' || user.allRoles.includes('admin')) {
+            allow(Action.Manage, 'all');
+        }
         allow(Action.Read, 'all');
 
         // Nếu người dùng có quyền hạn 'super-admin' thì có thể thực hiện tất cả các hành động trên tất cả các đối tượng.
-        if (userPermissions.includes('super-admin')) {
+        if (allPermissions.includes('super-admin')) {
             allow(Action.Manage, 'all');
         }
         // Các quyền hạn của người dùng với đối tượng User
-        if (userPermissions.includes('user.manage')) {
+        if (allPermissions.includes('user.manage')) {
             allow(Action.Manage, User);
         }
-        if (userPermissions.includes('user.list')) {
+        if (allPermissions.includes('user.list')) {
             allow(Action.List, User);
         }
-        if (userPermissions.includes('user.create')) {
+        if (allPermissions.includes('user.create')) {
             allow(Action.Create, User);
         }
-        if (userPermissions.includes('user.update')) {
+        if (allPermissions.includes('user.update')) {
             allow(Action.Update, User);
         }
-        if (userPermissions.includes('user.delete')) {
+        if (allPermissions.includes('user.delete')) {
             allow(Action.Delete, User);
         }
 

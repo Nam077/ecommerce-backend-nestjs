@@ -13,7 +13,7 @@ import { PoliciesGuard } from '../auth/guards/policies.guard';
 @Controller('user')
 @ApiBearerAuth()
 @ApiTags('User')
-// @UseGuards(AtGuard)
+@UseGuards(AtGuard)
 export class UserController {
     constructor(private readonly userService: UserService) {}
 
